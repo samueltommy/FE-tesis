@@ -1,6 +1,6 @@
 import React from 'react';
-import { Badge } from '@/app/components/ui/badge';
-import { Card } from '@/app/components/ui/card';
+import { Badge } from '../ui/badge';
+import { Card } from '../ui/card';
 import { Activity, Scale, Clock, Ruler } from 'lucide-react';
 import { Chicken } from '../../data';
 

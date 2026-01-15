@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Scan, Target, Activity } from 'lucide-react';
-import { Badge } from '@/app/components/ui/Badge';
+import { Badge } from '../ui/badge';
 
 interface VideoFeedProps {
   title: string;

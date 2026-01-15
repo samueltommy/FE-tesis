@@ -1,7 +1,7 @@
-import { ScrollArea } from '@/app/components/ui/scroll-area';
-import { Badge } from '@/app/components/ui/badge';
+import { ScrollArea } from '../ui/scroll-area';
+import { Badge } from '../ui/badge';
 import { Wifi, Battery, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { Chicken } from '@/app/data';
+import { Chicken } from '../../data';
 
 interface ChickenListProps {
   chickens: Chicken[];
