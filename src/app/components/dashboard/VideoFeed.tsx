@@ -1,15 +1,15 @@
-import React from 'react';
 import { motion } from 'motion/react';
 import { Scan, Target, Activity } from 'lucide-react';
-import { Badge } from '@/app/components/ui/badge';
+import { Badge } from '@/app/components/ui/Badge';
 
 interface VideoFeedProps {
   title: string;
   src: string;
   type: 'top' | 'side';
+  selectedId?: string;
 }
 
-export const VideoFeed = ({ title, src, type }: VideoFeedProps) => {
+export const VideoFeed = ({ title, src, type, selectedId }: VideoFeedProps) => {
   return (
     <div className="relative flex flex-col h-full overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950">
       {/* Header */}
@@ -41,42 +41,47 @@ export const VideoFeed = ({ title, src, type }: VideoFeedProps) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ repeat: Infinity, duration: 2, repeatType: 'reverse' }}
-              className="absolute top-1/4 left-1/4 w-24 h-24 border-2 border-green-500/50 rounded-sm"
+              className="absolute top-1/4 left-1/4 w-32 h-32 md:w-48 md:h-48 border-2 border-green-500/50 rounded-sm"
             >
-              <div className="absolute -top-4 left-0 text-[10px] text-green-400 font-mono bg-zinc-950/80 px-1">ID:CK-892</div>
-              <div className="absolute bottom-0 right-0 text-[10px] text-green-400 font-mono">98%</div>
+              <div className="absolute -top-7 left-0 text-sm md:text-lg text-green-400 font-bold font-mono bg-zinc-950/90 px-2 py-0.5 border border-green-500/30 rounded-sm shadow-lg backdrop-blur-sm">
+                ID:{selectedId || 'SCANNING...'}
+              </div>
+              <div className="absolute bottom-0 right-0 p-1 text-xs md:text-sm text-green-400 font-bold font-mono bg-zinc-950/50">
+                CONF: 98%
+              </div>
             </motion.div>
 
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ repeat: Infinity, duration: 2.5, repeatType: 'reverse', delay: 0.5 }}
-              className="absolute bottom-1/3 right-1/4 w-20 h-20 border-2 border-green-500/50 rounded-sm"
+              className="absolute bottom-1/3 right-1/4 w-24 h-24 md:w-32 md:h-32 border-2 border-green-500/50 rounded-sm"
             >
-              <div className="absolute -top-4 left-0 text-[10px] text-green-400 font-mono bg-zinc-950/80 px-1">ID:CK-901</div>
+              <div className="absolute -top-6 left-0 text-xs text-green-400 font-mono bg-zinc-950/80 px-1.5 py-0.5">ID:CK-901</div>
             </motion.div>
           </>
         )}
+
 
         {/* HUD Overlay - Side View (Biometrics Focus) */}
         {type === 'side' && (
           <div className="absolute inset-0 flex items-center justify-center">
             <motion.div 
-              className="w-64 h-48 border border-amber-500/30 relative"
+              className="w-1/2 h-2/3 border-2 border-amber-500/30 relative"
             >
                {/* Corner Brackets */}
-               <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-amber-500" />
-               <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-amber-500" />
-               <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-amber-500" />
-               <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-amber-500" />
+               <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-amber-500" />
+               <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-amber-500" />
+               <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-amber-500" />
+               <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-amber-500" />
                
                {/* Center Crosshair */}
                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                 <Target className="w-8 h-8 text-amber-500/50" />
+                 <Target className="w-16 h-16 text-amber-500/50" />
                </div>
 
-               <div className="absolute -bottom-8 left-0 text-amber-400 font-mono text-xs">
-                  BIO-SCAN ACTIVE...
+               <div className="absolute -bottom-10 left-0 text-amber-400 font-mono text-sm md:text-base font-bold bg-zinc-950/80 px-2 py-1">
+                  SUBJECT: {selectedId} | BIO-SCAN ACTIVE...
                </div>
             </motion.div>
           </div>
