@@ -1,15 +1,28 @@
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Scan, Target, Activity } from 'lucide-react';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+
 
 interface VideoFeedProps {
   title: string;
   src: string;
   type: 'top' | 'side';
   selectedId?: string;
+  enableYolo?: boolean;
 }
 
 export const VideoFeed = ({ title, src, type, selectedId }: VideoFeedProps) => {
+  // Timer state for YOLO overlay simulation
+  const [timer, setTimer] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => setTimer((t) => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // These props will be lifted to parent for sync control
   return (
     <div className="relative flex flex-col h-full overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950">
       {/* Header */}
@@ -28,14 +41,15 @@ export const VideoFeed = ({ title, src, type, selectedId }: VideoFeedProps) => {
         <img 
           src={src} 
           alt={title} 
-          className="w-full h-full object-cover opacity-60 grayscale-[30%] contrast-125 group-hover:opacity-80 transition-opacity duration-300"
+          className="w-full h-full object-contain opacity-60 grayscale-[30%] contrast-125 group-hover:opacity-80 transition-opacity duration-300"
+          style={{ maxHeight: '100%', maxWidth: '100%' }}
         />
         
         {/* CRT Scanline Effect */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-10 bg-[length:100%_2px,3px_100%] pointer-events-none" />
 
         {/* HUD Overlay - Top View (Multiple Targets) */}
-        {type === 'top' && (
+        {type === 'top' && !false && (
           <>
             <motion.div 
               initial={{ opacity: 0 }}
@@ -61,10 +75,19 @@ export const VideoFeed = ({ title, src, type, selectedId }: VideoFeedProps) => {
             </motion.div>
           </>
         )}
+        {/* YOLO Overlay (simulated) */}
+        {type === 'top' && false && (
+          <div className="absolute inset-0 flex items-center justify-center z-20">
+            <div className="bg-black/60 rounded-lg p-6 flex flex-col items-center">
+              <span className="text-green-400 font-mono text-lg mb-2">YOLO PROCESSING...</span>
+              <span className="text-white font-mono text-2xl">{timer}s</span>
+            </div>
+          </div>
+        )}
 
 
         {/* HUD Overlay - Side View (Biometrics Focus) */}
-        {type === 'side' && (
+        {type === 'side' && !false && (
           <div className="absolute inset-0 flex items-center justify-center">
             <motion.div 
               className="w-1/2 h-2/3 border-2 border-amber-500/30 relative"
@@ -74,16 +97,22 @@ export const VideoFeed = ({ title, src, type, selectedId }: VideoFeedProps) => {
                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-amber-500" />
                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-amber-500" />
                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-amber-500" />
-               
                {/* Center Crosshair */}
                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                  <Target className="w-16 h-16 text-amber-500/50" />
                </div>
-
                <div className="absolute -bottom-10 left-0 text-amber-400 font-mono text-sm md:text-base font-bold bg-zinc-950/80 px-2 py-1">
                   SUBJECT: {selectedId} | BIO-SCAN ACTIVE...
                </div>
             </motion.div>
+          </div>
+        )}
+        {type === 'side' && false && (
+          <div className="absolute inset-0 flex items-center justify-center z-20">
+            <div className="bg-black/60 rounded-lg p-6 flex flex-col items-center">
+              <span className="text-amber-400 font-mono text-lg mb-2">YOLO PROCESSING...</span>
+              <span className="text-white font-mono text-2xl">{timer}s</span>
+            </div>
           </div>
         )}
 
@@ -91,6 +120,8 @@ export const VideoFeed = ({ title, src, type, selectedId }: VideoFeedProps) => {
         <div className="absolute bottom-2 left-2 font-mono text-[10px] text-zinc-500">
           CAM-{type === 'top' ? '01' : '02'} // {type === 'top' ? 'POS_TRK' : 'BIO_MET'}
         </div>
+
+
       </div>
     </div>
   );

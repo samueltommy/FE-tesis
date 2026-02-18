@@ -5,11 +5,18 @@ import { WeightChart } from './components/dashboard/WeightChart';
 import { BiometricCard } from './components/dashboard/BiometricCard';
 import { LayoutDashboard, Settings, Bell } from 'lucide-react';
 import { Button } from './components/ui/button';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './components/ui/dialog';
 import { mockChickens, flockAverageHistory } from './data';
+import { YOLOModal } from './components/dashboard/YOLOModal';
+import { YOLOProcessingModal } from './components/dashboard/YOLOProcessingModal';
 
 export default function App() {
   const [selectedChickenId, setSelectedChickenId] = useState<string>(mockChickens[0].id);
   const selectedChicken = mockChickens.find(c => c.id === selectedChickenId) || mockChickens[0];
+  const [yoloOpen, setYoloOpen] = useState(false);
+  const handleRunYolo = () => {
+    setYoloOpen(true);
+  };
 
   useEffect(() => {
     document.title = "FarmSense - Precision Livestock Dashboard";
@@ -30,16 +37,42 @@ export default function App() {
         </div>
         
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-3 py-1 bg-zinc-900 rounded-full border border-zinc-800">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs text-zinc-400 font-mono">SYSTEM ONLINE</span>
-          </div>
-          <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white hover:bg-zinc-800">
-            <Bell className="w-5 h-5" />
+          <Button
+            className="bg-green-600 hover:bg-green-500 text-white font-semibold shadow-sm border border-green-700"
+            size="sm"
+            onClick={handleRunYolo}
+          >
+            Run YOLO
           </Button>
-          <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white hover:bg-zinc-800">
-            <Settings className="w-5 h-5" />
-          </Button>
+          <YOLOProcessingModal
+            open={yoloOpen}
+            onClose={() => setYoloOpen(false)}
+            duration={2000}
+          />
+          {/* Removed notification button and dialog */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                size="icon"
+                className="bg-transparent text-white hover:bg-zinc-800/60"
+                aria-label="Account Settings"
+              >
+                <Settings className="w-5 h-5" strokeWidth={2.2} color="white" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Account Settings</DialogTitle>
+                <DialogDescription>
+                  <div className="flex flex-col gap-2 mt-2">
+                    <div className="text-sm">User: <span className="font-mono">admin</span></div>
+                    <div className="text-sm">Email: <span className="font-mono">admin@example.com</span></div>
+                    <Button className="mt-2 w-fit" variant="secondary">Change Password</Button>
+                  </div>
+                </DialogDescription>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
           <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden">
              <img src="https://ui.shadcn.com/avatars/01.png" alt="User" />
           </div>
@@ -58,6 +91,7 @@ export default function App() {
               type="top"
               src="https://images.unsplash.com/photo-1504211521532-e461946e21b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjaGlja2VuJTIwcG91bHRyeSUyMGZhcm0lMjB0b3AlMjB2aWV3fGVufDF8fHx8MTc2ODQwNTk0NXww&ixlib=rb-4.1.0&q=80&w=1080" 
               selectedId={selectedChickenId}
+              enableYolo
             />
           </div>
 
@@ -68,6 +102,7 @@ export default function App() {
               type="side"
               src="https://images.unsplash.com/photo-1673446672646-74e63636db3b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjaGlja2VuJTIwY2xvc2UlMjB1cCUyMHNpZGUlMjB2aWV3fGVufDF8fHx8MTc2ODQwNTk1NXww&ixlib=rb-4.1.0&q=80&w=1080"
               selectedId={selectedChickenId}
+              enableYolo
             />
           </div>
 
