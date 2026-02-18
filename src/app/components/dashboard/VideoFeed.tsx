@@ -1,127 +1,172 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Scan, Target, Activity } from 'lucide-react';
+import { Scan, Activity, Loader2, ServerCrash } from 'lucide-react';
 import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
-
 
 interface VideoFeedProps {
   title: string;
-  src: string;
   type: 'top' | 'side';
   selectedId?: string;
   enableYolo?: boolean;
 }
 
-export const VideoFeed = ({ title, src, type, selectedId }: VideoFeedProps) => {
-  // Timer state for YOLO overlay simulation
-  const [timer, setTimer] = useState(0);
+export const VideoFeed = ({ title, type, selectedId, enableYolo }: VideoFeedProps) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const pcRef = useRef<RTCPeerConnection | null>(null);
+  
+  // Track the state of the video feed to show the appropriate UI
+  const [streamStatus, setStreamStatus] = useState<'connecting' | 'playing' | 'error'>('connecting');
 
   useEffect(() => {
-    const interval = setInterval(() => setTimer((t) => t + 1), 1000);
-    return () => clearInterval(interval);
-  }, []);
+    const initWebRTC = async () => {
+      setStreamStatus('connecting');
+      const pc = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+      });
+      pcRef.current = pc;
 
-  // These props will be lifted to parent for sync control
+      pc.addTransceiver('video', { direction: 'recvonly' });
+
+      pc.ontrack = (event) => {
+        if (videoRef.current && event.streams && event.streams[0]) {
+          videoRef.current.srcObject = event.streams[0];
+        }
+      };
+
+      // Listen for connection failures
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+          setStreamStatus('error');
+        }
+      };
+
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        await new Promise<void>((resolve) => {
+          if (pc.iceGatheringState === 'complete') {
+            resolve();
+          } else {
+            const checkState = () => {
+              if (pc.iceGatheringState === 'complete') {
+                pc.removeEventListener('icegatheringstatechange', checkState);
+                resolve();
+              }
+            };
+            pc.addEventListener('icegatheringstatechange', checkState);
+            setTimeout(() => {
+              pc.removeEventListener('icegatheringstatechange', checkState);
+              resolve();
+            }, 1000); 
+          }
+        });
+
+        const camId = type === 'top' ? '1' : '2';
+        const webrtcUrl = `http://127.0.0.1:8080/offer?cam=${camId}`;
+
+        const response = await fetch(webrtcUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sdp: pc.localDescription?.sdp,
+            type: pc.localDescription?.type,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch WebRTC answer: ${response.statusText}`);
+        }
+
+        const answer = await response.json();
+        await pc.setRemoteDescription(new RTCSessionDescription(answer));
+      } catch (error) {
+        console.error('WebRTC Connection Error:', error);
+        setStreamStatus('error');
+      }
+    };
+
+    initWebRTC();
+
+    return () => {
+      if (pcRef.current) {
+        pcRef.current.close();
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    };
+  }, [type]);
+
   return (
-    <div className="relative flex flex-col h-full overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950">
+    <div className="relative flex flex-col h-full w-full overflow-hidden rounded-lg border border-zinc-800 bg-black">
       {/* Header */}
-      <div className="flex items-center justify-between bg-zinc-900/80 px-4 py-2 backdrop-blur-sm border-b border-zinc-800 z-10">
-        <h3 className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-          {type === 'top' ? <Scan className="w-4 h-4 text-green-400" /> : <Activity className="w-4 h-4 text-amber-400" />}
+      <div className="flex items-center justify-between bg-zinc-900/90 px-2 py-1.5 backdrop-blur-md border-b border-zinc-800 z-10 shadow-sm shrink-0">
+        <h3 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+          {type === 'top' ? <Scan className="w-4 h-4 text-emerald-400" /> : <Activity className="w-4 h-4 text-amber-400" />}
           {title}
         </h3>
-        <Badge variant="outline" className="bg-red-950/30 text-red-500 border-red-900 animate-pulse text-[10px] px-1.5">
-          ● LIVE
+        <Badge 
+          variant="outline" 
+          className={`
+            ${streamStatus === 'playing' ? 'bg-red-950/40 text-red-500 border-red-900 animate-pulse' : 'bg-zinc-800 text-zinc-400 border-zinc-700'} 
+            text-[10px] px-2 py-0.5 rounded-full
+          `}
+        >
+          {streamStatus === 'playing' ? '● LIVE' : streamStatus === 'error' ? 'OFFLINE' : 'CONNECTING'}
         </Badge>
       </div>
 
       {/* Video Area */}
-      <div className="relative flex-1 bg-zinc-950 overflow-hidden group">
-        <img 
-          src={src} 
-          alt={title} 
-          className="w-full h-full object-contain opacity-60 grayscale-[30%] contrast-125 group-hover:opacity-80 transition-opacity duration-300"
-          style={{ maxHeight: '100%', maxWidth: '100%' }}
-        />
+      <div className="relative flex-1 bg-black overflow-hidden flex items-center justify-center">
         
-        {/* CRT Scanline Effect */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-10 bg-[length:100%_2px,3px_100%] pointer-events-none" />
-
-        {/* HUD Overlay - Top View (Multiple Targets) */}
-        {type === 'top' && !false && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ repeat: Infinity, duration: 2, repeatType: 'reverse' }}
-              className="absolute top-1/4 left-1/4 w-32 h-32 md:w-48 md:h-48 border-2 border-green-500/50 rounded-sm"
+        {/* Loading Ornament */}
+        {streamStatus === 'connecting' && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950 z-20">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+              className="mb-4"
             >
-              <div className="absolute -top-7 left-0 text-sm md:text-lg text-green-400 font-bold font-mono bg-zinc-950/90 px-2 py-0.5 border border-green-500/30 rounded-sm shadow-lg backdrop-blur-sm">
-                ID:{selectedId || 'SCANNING...'}
-              </div>
-              <div className="absolute bottom-0 right-0 p-1 text-xs md:text-sm text-green-400 font-bold font-mono bg-zinc-950/50">
-                CONF: 98%
-              </div>
+              <Loader2 className="w-10 h-10 text-zinc-500" />
             </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ repeat: Infinity, duration: 2.5, repeatType: 'reverse', delay: 0.5 }}
-              className="absolute bottom-1/3 right-1/4 w-24 h-24 md:w-32 md:h-32 border-2 border-green-500/50 rounded-sm"
-            >
-              <div className="absolute -top-6 left-0 text-xs text-green-400 font-mono bg-zinc-950/80 px-1.5 py-0.5">ID:CK-901</div>
-            </motion.div>
-          </>
-        )}
-        {/* YOLO Overlay (simulated) */}
-        {type === 'top' && false && (
-          <div className="absolute inset-0 flex items-center justify-center z-20">
-            <div className="bg-black/60 rounded-lg p-6 flex flex-col items-center">
-              <span className="text-green-400 font-mono text-lg mb-2">YOLO PROCESSING...</span>
-              <span className="text-white font-mono text-2xl">{timer}s</span>
-            </div>
+            <span className="text-zinc-400 font-mono text-xs tracking-widest animate-pulse">
+              ESTABLISHING EDGE NODE CONNECTION...
+            </span>
+            <span className="text-zinc-600 font-mono text-[10px] mt-2">
+              CAM-{type === 'top' ? '01' : '02'} FEED
+            </span>
           </div>
         )}
 
-
-        {/* HUD Overlay - Side View (Biometrics Focus) */}
-        {type === 'side' && !false && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <motion.div 
-              className="w-1/2 h-2/3 border-2 border-amber-500/30 relative"
+        {/* Error State */}
+        {streamStatus === 'error' && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950 z-20">
+            <ServerCrash className="w-10 h-10 text-red-900 mb-4" />
+            <span className="text-red-500 font-mono text-xs tracking-widest">
+              CONNECTION FAILED
+            </span>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 text-[10px] text-zinc-400 hover:text-white underline underline-offset-4 transition-colors"
             >
-               {/* Corner Brackets */}
-               <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-amber-500" />
-               <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-amber-500" />
-               <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-amber-500" />
-               <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-amber-500" />
-               {/* Center Crosshair */}
-               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                 <Target className="w-16 h-16 text-amber-500/50" />
-               </div>
-               <div className="absolute -bottom-10 left-0 text-amber-400 font-mono text-sm md:text-base font-bold bg-zinc-950/80 px-2 py-1">
-                  SUBJECT: {selectedId} | BIO-SCAN ACTIVE...
-               </div>
-            </motion.div>
-          </div>
-        )}
-        {type === 'side' && false && (
-          <div className="absolute inset-0 flex items-center justify-center z-20">
-            <div className="bg-black/60 rounded-lg p-6 flex flex-col items-center">
-              <span className="text-amber-400 font-mono text-lg mb-2">YOLO PROCESSING...</span>
-              <span className="text-white font-mono text-2xl">{timer}s</span>
-            </div>
+              RETRY CONNECTION
+            </button>
           </div>
         )}
 
-        {/* Tech Decorators */}
-        <div className="absolute bottom-2 left-2 font-mono text-[10px] text-zinc-500">
-          CAM-{type === 'top' ? '01' : '02'} // {type === 'top' ? 'POS_TRK' : 'BIO_MET'}
-        </div>
-
-
+        {/* Video Element */}
+        <video 
+          ref={videoRef}
+          autoPlay 
+          playsInline 
+          muted 
+          onPlaying={() => setStreamStatus('playing')}
+          // Reverted back to object-contain so no tracking data gets cut off
+          className={`w-full h-full object-contain bg-black transition-opacity duration-700 ${streamStatus === 'playing' ? 'opacity-100' : 'opacity-0'}`}
+        />
       </div>
     </div>
   );
