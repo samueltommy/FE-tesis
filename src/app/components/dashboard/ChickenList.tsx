@@ -1,11 +1,10 @@
 import { Badge } from '../ui/badge';
 import { Wifi, Battery, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { Chicken } from '../../data';
 
 interface ChickenListProps {
-  chickens: Chicken[];
-  selectedId: string;
-  onSelect: (id: string) => void;
+  chickens: any[];
+  selectedId: number | null;
+  onSelect: (id: number) => void;
 }
 
 export const ChickenList = ({ chickens, selectedId, onSelect }: ChickenListProps) => {
@@ -34,22 +33,28 @@ export const ChickenList = ({ chickens, selectedId, onSelect }: ChickenListProps
       {/* Scrollable List Area */}
       <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar bg-zinc-950">
         <div className="flex flex-col">
+          {chickens.length === 0 && (
+             <div className="p-4 text-center text-zinc-500 text-xs">No objects detected in this session.</div>
+          )}
           {chickens.map((chicken, i) => {
-            const isSelected = chicken.id === selectedId;
+            const isSelected = chicken.track_id === selectedId;
+            const weightGrams = chicken.estimated_weight ? (chicken.estimated_weight * 1000).toFixed(0) : "0";
+            const isHealthy = chicken.estimated_weight >= 1.5; // Dummy logic
+            
             return (
               <button 
-                key={chicken.id}
-                onClick={() => onSelect(chicken.id)}
+                key={chicken.track_id}
+                onClick={() => onSelect(chicken.track_id)}
                 className={`grid grid-cols-4 px-3 py-1.5 border-b border-zinc-800/50 hover:bg-zinc-900/60 transition-colors items-center font-mono text-xs text-left w-full
                   ${isSelected ? 'bg-zinc-800/80 border-l-2 border-l-green-500' : (i % 2 === 0 ? 'bg-zinc-950' : 'bg-zinc-900/20')}
                 `}
                 aria-selected={isSelected}
               >
-                <div className={`font-bold ${isSelected ? 'text-green-400' : 'text-zinc-300'}`}>{chicken.id}</div> 
-                <div className="text-right text-zinc-400">{chicken.weight}</div>
-                <div className="text-right text-zinc-500">{chicken.confidence}%</div>
+                <div className={`font-bold ${isSelected ? 'text-green-400' : 'text-zinc-300'}`}>ID {chicken.track_id}</div> 
+                <div className="text-right text-zinc-400">{weightGrams}</div>
+                <div className="text-right text-zinc-500">~98%</div>
                 <div className="flex justify-end">
-                  {chicken.status === 'healthy' ? (
+                  {isHealthy ? (
                     <Badge variant="outline" className="bg-green-950/20 text-green-500 border-green-900 gap-1 rounded-sm text-[9px] px-1 py-0 h-4">
                       <CheckCircle2 className="w-2.5 h-2.5" /> OK
                     </Badge>

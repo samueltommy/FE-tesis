@@ -7,17 +7,36 @@ import { Activity, Scale, Clock, Ruler, X, CheckCircle2, Maximize2 } from 'lucid
 import { Chicken } from '../../data';
 
 interface BiometricCardProps {
-  chicken: Chicken;
+  details: any; // Menerima JSON dari API Backend
 }
 
-export const BiometricCard = ({ chicken }: BiometricCardProps) => {
+export const BiometricCard = ({ details }: BiometricCardProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const weightKg = (chicken.weight / 1000).toFixed(2);
-  const isHarvestReady = chicken.weight >= 2000;
+  if (!details) {
+    return (
+      <Card className="flex items-center justify-center h-full w-full bg-zinc-950 border-zinc-800 text-zinc-500 font-mono text-sm">
+        [ NO DATA SELECTED ]
+      </Card>
+    );
+  }
+
+  // Menggabungkan data Backend dengan layout Dummy lama
+  const weightKg = details.estimated_weight ? details.estimated_weight.toFixed(3) : "0.000";
+  const weightGrams = details.estimated_weight ? (details.estimated_weight * 1000).toFixed(0) : "0";
+  const isHarvestReady = details.estimated_weight >= 2.0; // Target 2kg
   const statusColor = isHarvestReady ? "text-green-500" : "text-amber-500";
   const gaugeColor = isHarvestReady ? "#22c55e" : "#f59e0b";
-  const percent = Math.min((chicken.weight / 2500) * 100, 100);
+  const percent = Math.min(((details.estimated_weight || 0) / 2.5) * 100, 100);
+
+  // Fallback untuk variabel lama yang ada di file mock (Jangan dihilangkan)
+  const displayAge = details.age || 42; 
+  const displayConfidence = details.confidence || 98.5;
+
+  // Gambar
+  const placeholderImg = "https://images.unsplash.com/photo-1504211521532-e461946e21b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=200";
+  const topImgUrl = details.image_url_top || placeholderImg;
+  const sideImgUrl = details.image_url_side || placeholderImg;
 
   return (
     <>
@@ -30,7 +49,10 @@ export const BiometricCard = ({ chicken }: BiometricCardProps) => {
         <div className="flex items-center justify-between px-3 py-2 bg-zinc-900/50 border-b border-zinc-800 shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
-            <span className="font-mono text-sm font-bold tracking-tight">ID {chicken.id}</span>
+            <span className="font-mono text-sm font-bold tracking-tight">ID {details.track_id}</span>
+            {details.is_fused && (
+              <Badge variant="outline" className="bg-blue-900/30 text-blue-400 border-blue-800 text-[9px] px-1 py-0 h-4 ml-1">3D FUSED</Badge>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-[10px] bg-zinc-900 text-zinc-400 border-zinc-700 font-mono px-1.5 py-0 h-5 flex items-center">
@@ -52,13 +74,13 @@ export const BiometricCard = ({ chicken }: BiometricCardProps) => {
                   <Ruler className="w-3 h-3" /> Visuals
                 </h4>
                 <div className="flex-1 grid grid-rows-2 gap-1.5 min-h-0">
-                   <div className="relative rounded-sm overflow-hidden border border-zinc-800 bg-zinc-900">
+                   <div className="relative rounded-sm overflow-hidden border border-zinc-800 bg-zinc-900 flex items-center justify-center">
                      <div className="absolute top-1 left-1 z-10 bg-black/60 px-1 py-0.5 text-[8px] font-mono text-zinc-300 rounded-sm">TOP</div>
-                     <img src="https://images.unsplash.com/photo-1504211521532-e461946e21b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=200" alt="Top" className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
+                     <img src={topImgUrl} alt="Top" className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
                    </div>
-                   <div className="relative rounded-sm overflow-hidden border border-zinc-800 bg-zinc-900">
+                   <div className="relative rounded-sm overflow-hidden border border-zinc-800 bg-zinc-900 flex items-center justify-center">
                       <div className="absolute top-1 left-1 z-10 bg-black/60 px-1 py-0.5 text-[8px] font-mono text-zinc-300 rounded-sm">SIDE</div>
-                     <img src="https://images.unsplash.com/photo-1673446672646-74e63636db3b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=200" alt="Side" className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
+                     <img src={sideImgUrl} alt="Side" className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
                    </div>
                 </div>
              </div>
@@ -98,7 +120,7 @@ export const BiometricCard = ({ chicken }: BiometricCardProps) => {
             </h4>
             <div className="bg-zinc-900/30 p-2 rounded-lg border border-zinc-800/50 flex justify-between items-center">
                <div>
-                  <div className="text-lg font-bold text-zinc-200 leading-none">{chicken.age} <span className="text-[10px] font-normal text-zinc-500">Days</span></div>
+                  <div className="text-lg font-bold text-zinc-200 leading-none">{displayAge} <span className="text-[10px] font-normal text-zinc-500">Days</span></div>
                </div>
                <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 text-[10px] text-zinc-400">
                   <Activity className="w-3 h-3 text-zinc-500" />
@@ -130,15 +152,13 @@ export const BiometricCard = ({ chicken }: BiometricCardProps) => {
 
       {/* DETAILED MODAL POPUP */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        {/* Using max-w-5xl for a huge, roomy layout. [&>button]:hidden removes the tiny default close icon. */}
         <DialogContent className="max-w-5xl sm:max-w-5xl w-[95vw] bg-zinc-950 border border-zinc-800 p-0 flex flex-col rounded-xl overflow-hidden shadow-2xl [&>button]:hidden text-zinc-100">
           
-          {/* Top Bar matching the VideoFeed popup style */}
           <div className="flex items-center justify-between px-6 py-4 bg-zinc-900 border-b border-zinc-800 shrink-0">
             <DialogHeader className="p-0 m-0">
               <DialogTitle className="text-zinc-100 text-xl tracking-tight font-bold flex items-center gap-3">
                 <Activity className="w-6 h-6 text-blue-500" />
-                Detailed Biometric Analysis - ID: {chicken.id}
+                Detailed Biometric Analysis - ID: {details.track_id}
               </DialogTitle>
             </DialogHeader>
             <Button
@@ -151,7 +171,6 @@ export const BiometricCard = ({ chicken }: BiometricCardProps) => {
             </Button>
           </div>
 
-          {/* Huge Detailed Body */}
           <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8 bg-black overflow-y-auto max-h-[80vh]">
             
             {/* LEFT: Large High-Res Visuals */}
@@ -161,13 +180,13 @@ export const BiometricCard = ({ chicken }: BiometricCardProps) => {
                  Captured Source Visuals
                </h3>
                <div className="flex flex-col gap-4">
-                 <div className="relative rounded-lg border border-zinc-800 overflow-hidden bg-zinc-900 h-64 shadow-inner">
+                 <div className="relative rounded-lg border border-zinc-800 overflow-hidden bg-zinc-900 h-64 shadow-inner flex items-center justify-center">
                    <div className="absolute top-3 left-3 bg-black/80 px-3 py-1 text-xs font-mono text-green-400 border border-green-500/30 rounded z-10 font-bold">TOP CAMERA FEED</div>
-                   <img src="https://images.unsplash.com/photo-1504211521532-e461946e21b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1000" className="w-full h-full object-cover opacity-80" alt="Top Camera" />
+                   <img src={topImgUrl} className="w-full h-full object-contain opacity-90" alt="Top Camera" />
                  </div>
-                 <div className="relative rounded-lg border border-zinc-800 overflow-hidden bg-zinc-900 h-64 shadow-inner">
+                 <div className="relative rounded-lg border border-zinc-800 overflow-hidden bg-zinc-900 h-64 shadow-inner flex items-center justify-center">
                    <div className="absolute top-3 left-3 bg-black/80 px-3 py-1 text-xs font-mono text-amber-400 border border-amber-500/30 rounded z-10 font-bold">SIDE CAMERA FEED</div>
-                   <img src="https://images.unsplash.com/photo-1673446672646-74e63636db3b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1000" className="w-full h-full object-cover opacity-80" alt="Side Camera" />
+                   <img src={sideImgUrl} className="w-full h-full object-contain opacity-90" alt="Side Camera" />
                  </div>
                </div>
             </div>
@@ -205,7 +224,7 @@ export const BiometricCard = ({ chicken }: BiometricCardProps) => {
                      <div className="grid grid-cols-2 gap-4 pt-2">
                         <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
                            <div className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Flock Age</div>
-                           <div className="text-2xl font-bold text-zinc-100 mt-1">{chicken.age} <span className="text-sm font-normal text-zinc-500">Days</span></div>
+                           <div className="text-2xl font-bold text-zinc-100 mt-1">{displayAge} <span className="text-sm font-normal text-zinc-500">Days</span></div>
                         </div>
                         <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
                            <div className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Classification</div>
@@ -222,12 +241,18 @@ export const BiometricCard = ({ chicken }: BiometricCardProps) => {
                   <div className="space-y-6">
                      <div className="flex justify-between items-center pb-4 border-b border-zinc-800/80">
                         <span className="text-zinc-400 font-medium">Tracking Confidence Algorithm</span>
-                        <span className="font-mono text-green-400 font-bold text-lg">{chicken.confidence || 98.5}% ACC</span>
+                        <span className="font-mono text-green-400 font-bold text-lg">{displayConfidence}% ACC</span>
+                     </div>
+                     <div className="flex justify-between items-center pb-4 border-b border-zinc-800/80">
+                        <span className="text-zinc-400 font-medium">Calculation Algorithm</span>
+                        <span className="font-mono text-blue-400 font-bold text-sm">
+                          {details.is_fused ? '3D VOLUME FUSION' : '2D AREA ESTIMATION'}
+                        </span>
                      </div>
                      <div className="flex justify-between items-center pb-4 border-b border-zinc-800/80">
                         <span className="text-zinc-400 font-medium">Estimated AI Forecast</span>
-                        <span className="font-mono text-zinc-100 font-semibold">
-                          {isHarvestReady ? 'Target Reached. Ready to process.' : '~3 Days Remaining to Target'}
+                        <span className="font-mono text-zinc-100 font-semibold text-right">
+                          {isHarvestReady ? 'Target Reached.' : '~3 Days Remaining'}
                         </span>
                      </div>
                      <div className="flex justify-between items-center">
