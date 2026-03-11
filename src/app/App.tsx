@@ -177,21 +177,61 @@ export default function App() {
           />
           <Dialog>
             <DialogTrigger asChild>
-              <Button size="icon" className="bg-transparent text-white hover:bg-zinc-800/60" aria-label="Account Settings">
+              <Button size="icon" className="bg-transparent text-white hover:bg-zinc-800/60">
                 <Settings className="w-5 h-5" strokeWidth={2.2} color="white" />
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="bg-zinc-950 border-zinc-800 text-zinc-100">
               <DialogHeader>
-                <DialogTitle>Account Settings</DialogTitle>
-                <DialogDescription>
-                  <div className="flex flex-col gap-2 mt-2">
-                    <div className="text-sm">User: <span className="font-mono">admin</span></div>
-                    <div className="text-sm">Email: <span className="font-mono">admin@example.com</span></div>
-                    <Button className="mt-2 w-fit" variant="secondary">Change Password</Button>
-                  </div>
+                <DialogTitle>Farm Configuration</DialogTitle>
+                <DialogDescription className="text-zinc-400">
+                  Set parameters for biological growth calculation.
                 </DialogDescription>
               </DialogHeader>
+              
+              <form 
+                className="flex flex-col gap-4 mt-4"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  
+                  // Kirim data ke Backend
+                  await fetch(`${API_BASE}/farm_settings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      chick_in_date: formData.get('chick_in_date') || null,
+                      manual_age_override: formData.get('manual_age') ? parseInt(formData.get('manual_age') as string) : null
+                    })
+                  });
+                  alert('Settings saved successfully!');
+                }}
+              >
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-semibold">Chick-in Date (For Live Camera)</label>
+                  <input 
+                    name="chick_in_date" 
+                    type="date" 
+                    className="bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-green-500" 
+                  />
+                  <span className="text-xs text-zinc-500">System will calculate age based on today's date.</span>
+                </div>
+
+                <div className="flex flex-col gap-1.5 mt-2 border-t border-zinc-800 pt-4">
+                  <label className="text-sm font-semibold">Video Playback Age Override (Days)</label>
+                  <input 
+                    name="manual_age" 
+                    type="number" 
+                    placeholder="e.g. 35"
+                    className="bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-green-500" 
+                  />
+                  <span className="text-xs text-zinc-500">Fill this ONLY if analyzing recorded video to override auto-calculation.</span>
+                </div>
+
+                <Button type="submit" className="mt-4 bg-green-600 hover:bg-green-500 text-white">
+                  Save Settings
+                </Button>
+              </form>
             </DialogContent>
           </Dialog>
           <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden">
