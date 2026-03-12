@@ -8,6 +8,8 @@ import { Button } from './components/ui/button';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './components/ui/dialog';
 import { mockChickens, flockAverageHistory } from './data';
 import { YOLOProcessingModal } from './components/dashboard/YOLOProcessingModal';
+import HarvestPredictionCard from './components/dashboard/HarvestPredictionCard';
+import GrowthChart from './components/dashboard/GrowthChart';
 
 export default function App() {
   // === STATE API BACKEND ===
@@ -304,12 +306,18 @@ export default function App() {
              />
           </div>
 
-          <div className="col-span-1 lg:col-span-8 xl:col-span-8 h-[400px] lg:h-[500px]">
-            <WeightChart 
-              flockData={flockAverageHistory} 
-              selectedChickenData={[]} // Biarkan array kosong untuk mockup
-              selectedId={selectedId?.toString() || ''}
-            />
+          <div className="col-span-1 lg:col-span-8 xl:col-span-8 flex flex-col gap-4 lg:gap-6 h-[800px] lg:h-[500px]">
+            
+            {/* Baris Atas: Prediksi Panen AI */}
+            <div className="shrink-0 h-[175px]">
+              <HarvestPredictionCard />
+            </div>
+
+            {/* Baris Bawah: Grafik Pertumbuhan (Sisa Ruang) */}
+            <div className="flex-1 min-h-0">
+              <GrowthChart />
+            </div>
+
           </div>
         </div>
       </main>

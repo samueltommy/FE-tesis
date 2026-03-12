@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '../ui/badge';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Activity, Scale, Clock, Ruler, X, CheckCircle2, Maximize2 } from 'lucide-react';
-import { Chicken } from '../../data';
 
 interface BiometricCardProps {
   details: any; // Menerima JSON dari API Backend
@@ -12,6 +11,21 @@ interface BiometricCardProps {
 
 export const BiometricCard = ({ details }: BiometricCardProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [prediction, setPrediction] = useState<any>(null);
+
+  const API_BASE = `http://${window.location.hostname}:5000`;
+
+  // Fetch data AI untuk mendapatkan target berat & umur dinamis
+  useEffect(() => {
+    fetch(`${API_BASE}/harvest_prediction`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "success") {
+          setPrediction(data.prediction);
+        }
+      })
+      .catch(err => console.error("Gagal mengambil data prediksi AI:", err));
+  }, [details]); // Re-fetch ringan saat ayam yang dipilih berubah
 
   if (!details) {
     return (
@@ -21,16 +35,22 @@ export const BiometricCard = ({ details }: BiometricCardProps) => {
     );
   }
 
-  // Menggabungkan data Backend dengan layout Dummy lama
-  const weightKg = details.estimated_weight ? details.estimated_weight.toFixed(3) : "0.000";
-  const weightGrams = details.estimated_weight ? (details.estimated_weight * 1000).toFixed(0) : "0";
-  const isHarvestReady = details.estimated_weight >= 2.0; // Target 2kg
-  const statusColor = isHarvestReady ? "text-green-500" : "text-amber-500";
-  const gaugeColor = isHarvestReady ? "#22c55e" : "#f59e0b";
-  const percent = Math.min(((details.estimated_weight || 0) / 2.5) * 100, 100);
+  // --- MENGGUNAKAN DATA AI DINAMIS ---
+  const targetWeight = prediction?.target_weight_kg || 2.0;
+  const displayAge = prediction?.calendar_age_days || details.age || "--";
+  const remainingDays = prediction?.estimated_days_remaining 
+    ? Math.max(0, prediction.estimated_days_remaining).toFixed(1) 
+    : "--";
 
-  // Fallback untuk variabel lama yang ada di file mock (Jangan dihilangkan)
-  const displayAge = details.age || 42; 
+  const weightNum = details.estimated_weight || 0;
+  const weightKg = weightNum.toFixed(3);
+  const isHarvestReady = weightNum >= targetWeight;
+  const statusColor = isHarvestReady ? "text-emerald-500" : "text-amber-500";
+  const gaugeColor = isHarvestReady ? "#10b981" : "#f59e0b"; // emerald-500 atau amber-500
+  
+  // Hitung persentase dinamis terhadap target (Maksimal 100%)
+  const percent = Math.min((weightNum / targetWeight) * 100, 100);
+
   const displayConfidence = details.confidence || 98.5;
 
   // Gambar
@@ -43,12 +63,12 @@ export const BiometricCard = ({ details }: BiometricCardProps) => {
       {/* SMALL COMPACT CARD (Clickable) */}
       <Card 
         onClick={() => setIsModalOpen(true)}
-        className="flex flex-col h-full w-full bg-zinc-950 border-zinc-800 text-zinc-100 overflow-hidden shadow-sm hover:ring-2 hover:ring-zinc-600 transition-all cursor-pointer group"
+        className="flex flex-col h-full w-full bg-zinc-950 border-zinc-800 text-zinc-100 overflow-hidden shadow-sm hover:ring-2 hover:ring-zinc-600 transition-all cursor-pointer group relative"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-3 py-2 bg-zinc-900/50 border-b border-zinc-800 shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+            <div className={`w-2 h-2 rounded-full ${isHarvestReady ? 'bg-emerald-500' : 'bg-green-500'} animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]`} />
             <span className="font-mono text-sm font-bold tracking-tight">ID {details.track_id}</span>
             {details.is_fused && (
               <Badge variant="outline" className="bg-blue-900/30 text-blue-400 border-blue-800 text-[9px] px-1 py-0 h-4 ml-1">3D FUSED</Badge>
@@ -102,11 +122,11 @@ export const BiometricCard = ({ details }: BiometricCardProps) => {
                   </div>
                   <div className="w-full shrink-0 mt-2">
                      <div className="flex justify-between items-baseline mb-1">
-                        <span className="text-zinc-400 text-[10px] font-medium leading-tight">Target 2.5kg</span>
+                        <span className="text-zinc-400 text-[10px] font-medium leading-tight">Target {targetWeight.toFixed(2)}kg</span>
                         <span className="text-[10px] text-zinc-500 font-mono">{percent.toFixed(0)}%</span>
                      </div>
                      <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-zinc-600 rounded-full" style={{ width: `${percent}%` }} />
+                        <div className="h-full bg-zinc-600 rounded-full transition-all duration-1000" style={{ width: `${percent}%` }} />
                      </div>
                   </div>
                 </div>
@@ -131,19 +151,19 @@ export const BiometricCard = ({ details }: BiometricCardProps) => {
         </div>
 
         {/* Footer Action */}
-        <div className={`p-2.5 border-t border-zinc-800 shrink-0 ${isHarvestReady ? 'bg-green-950/20' : 'bg-zinc-900/30'}`}>
+        <div className={`p-2.5 border-t border-zinc-800 shrink-0 ${isHarvestReady ? 'bg-emerald-950/30' : 'bg-zinc-900/30'}`}>
            {isHarvestReady ? (
-               <Badge className="bg-green-500 hover:bg-green-600 text-zinc-950 font-bold tracking-wide w-full justify-center py-1 text-xs rounded-md h-auto">
+               <Badge className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold tracking-wide w-full justify-center py-1 text-xs rounded-md h-auto">
                  HARVEST READY
                </Badge>
            ) : (
               <div className="flex flex-col gap-1.5">
                  <div className="flex justify-between text-[10px] uppercase font-bold text-zinc-500">
                     <span>Forecast</span>
-                    <span className="text-blue-400">~3 Days Remaining</span>
+                    <span className="text-indigo-400">~{remainingDays} Days Remaining</span>
                  </div>
                  <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-blue-500 h-full w-[85%]" />
+                    <div className="bg-indigo-500 h-full transition-all duration-1000" style={{ width: `${Math.min(100, (weightNum/targetWeight)*100)}%` }} />
                  </div>
               </div>
            )}
@@ -157,7 +177,7 @@ export const BiometricCard = ({ details }: BiometricCardProps) => {
           <div className="flex items-center justify-between px-6 py-4 bg-zinc-900 border-b border-zinc-800 shrink-0">
             <DialogHeader className="p-0 m-0">
               <DialogTitle className="text-zinc-100 text-xl tracking-tight font-bold flex items-center gap-3">
-                <Activity className="w-6 h-6 text-blue-500" />
+                <Activity className="w-6 h-6 text-indigo-500" />
                 Detailed Biometric Analysis - ID: {details.track_id}
               </DialogTitle>
             </DialogHeader>
@@ -181,7 +201,7 @@ export const BiometricCard = ({ details }: BiometricCardProps) => {
                </h3>
                <div className="flex flex-col gap-4">
                  <div className="relative rounded-lg border border-zinc-800 overflow-hidden bg-zinc-900 h-64 shadow-inner flex items-center justify-center">
-                   <div className="absolute top-3 left-3 bg-black/80 px-3 py-1 text-xs font-mono text-green-400 border border-green-500/30 rounded z-10 font-bold">TOP CAMERA FEED</div>
+                   <div className="absolute top-3 left-3 bg-black/80 px-3 py-1 text-xs font-mono text-emerald-400 border border-emerald-500/30 rounded z-10 font-bold">TOP CAMERA FEED</div>
                    <img src={topImgUrl} className="w-full h-full object-contain opacity-90" alt="Top Camera" />
                  </div>
                  <div className="relative rounded-lg border border-zinc-800 overflow-hidden bg-zinc-900 h-64 shadow-inner flex items-center justify-center">
@@ -199,8 +219,10 @@ export const BiometricCard = ({ details }: BiometricCardProps) => {
                </h3>
 
                {/* Giant Gauge Card */}
-               <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 flex items-center gap-8 shadow-md">
-                  <div className="w-40 h-40 relative shrink-0">
+               <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 flex items-center gap-8 shadow-md relative overflow-hidden">
+                  {isHarvestReady && <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />}
+                  
+                  <div className="w-40 h-40 relative shrink-0 z-10">
                      <svg viewBox="0 0 96 96" className="w-full h-full -rotate-90 drop-shadow-lg">
                         <circle cx="48" cy="48" r="42" className="fill-none stroke-zinc-950" strokeWidth="8" />
                         <circle cx="48" cy="48" r="42" strokeWidth="8" className="fill-none transition-all duration-1000 ease-out" stroke={gaugeColor} strokeLinecap="round" strokeDasharray={263.89} strokeDashoffset={263.89 * (1 - percent / 100)} />
@@ -211,14 +233,14 @@ export const BiometricCard = ({ details }: BiometricCardProps) => {
                      </div>
                   </div>
 
-                  <div className="flex-1 space-y-4">
+                  <div className="flex-1 space-y-4 z-10">
                      <div>
                         <div className="flex justify-between text-sm mb-1 text-zinc-300 font-semibold">
-                          <span>Target Weight: 2.50 kg</span>
-                          <span className="font-mono text-blue-400">{percent.toFixed(1)}%</span>
+                          <span>Target Weight: {targetWeight.toFixed(2)} kg</span>
+                          <span className="font-mono text-indigo-400">{percent.toFixed(1)}%</span>
                         </div>
                         <div className="h-2 w-full bg-zinc-950 rounded-full overflow-hidden border border-zinc-800">
-                           <div className="h-full bg-blue-500 rounded-full" style={{ width: `${percent}%` }} />
+                           <div className="h-full bg-indigo-500 rounded-full transition-all duration-1000" style={{ width: `${percent}%` }} />
                         </div>
                      </div>
                      <div className="grid grid-cols-2 gap-4 pt-2">
@@ -228,7 +250,7 @@ export const BiometricCard = ({ details }: BiometricCardProps) => {
                         </div>
                         <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
                            <div className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Classification</div>
-                           <div className={`text-lg font-bold mt-1 tracking-wide ${isHarvestReady ? 'text-green-500' : 'text-blue-500'}`}>
+                           <div className={`text-lg font-bold mt-1 tracking-wide ${isHarvestReady ? 'text-emerald-500' : 'text-indigo-400'}`}>
                              {isHarvestReady ? 'HARVEST READY' : 'GROWING'}
                            </div>
                         </div>
@@ -241,23 +263,23 @@ export const BiometricCard = ({ details }: BiometricCardProps) => {
                   <div className="space-y-6">
                      <div className="flex justify-between items-center pb-4 border-b border-zinc-800/80">
                         <span className="text-zinc-400 font-medium">Tracking Confidence Algorithm</span>
-                        <span className="font-mono text-green-400 font-bold text-lg">{displayConfidence}% ACC</span>
+                        <span className="font-mono text-emerald-400 font-bold text-lg">{displayConfidence}% ACC</span>
                      </div>
                      <div className="flex justify-between items-center pb-4 border-b border-zinc-800/80">
                         <span className="text-zinc-400 font-medium">Calculation Algorithm</span>
-                        <span className="font-mono text-blue-400 font-bold text-sm">
+                        <span className="font-mono text-indigo-400 font-bold text-sm">
                           {details.is_fused ? '3D VOLUME FUSION' : '2D AREA ESTIMATION'}
                         </span>
                      </div>
                      <div className="flex justify-between items-center pb-4 border-b border-zinc-800/80">
                         <span className="text-zinc-400 font-medium">Estimated AI Forecast</span>
                         <span className="font-mono text-zinc-100 font-semibold text-right">
-                          {isHarvestReady ? 'Target Reached.' : '~3 Days Remaining'}
+                          {isHarvestReady ? 'Target Reached.' : `~${remainingDays} Days Remaining`}
                         </span>
                      </div>
                      <div className="flex justify-between items-center">
                         <span className="text-zinc-400 font-medium">Biological Health Status</span>
-                        <Badge variant="outline" className="bg-green-950/40 text-green-500 border-green-900 flex items-center gap-2 py-1 px-3">
+                        <Badge variant="outline" className="bg-emerald-950/40 text-emerald-500 border-emerald-900 flex items-center gap-2 py-1 px-3">
                           <CheckCircle2 className="w-4 h-4" /> NO ANOMALIES DETECTED
                         </Badge>
                      </div>
