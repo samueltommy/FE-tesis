@@ -156,7 +156,7 @@ export default function HarvestPredictionCard() {
         {/* ========================================================= */}
         {/* BOTTOM PROGRESS SECTION */}
         {/* ========================================================= */}
-        {prediction.is_ready_to_harvest ? (
+        {/* {prediction.is_ready_to_harvest ? (
           <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-2.5 rounded-lg flex items-center justify-center gap-2 font-bold animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.1)]">
             <CheckCircle2 className="w-5 h-5" />
             AYAM SIAP PANEN HARI INI!
@@ -176,7 +176,7 @@ export default function HarvestPredictionCard() {
               </div>
             </div>
           </div>
-        )}
+        )} */}
       </CardContent>
     </Card>
   );
