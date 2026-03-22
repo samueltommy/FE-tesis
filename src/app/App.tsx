@@ -10,6 +10,7 @@ import { mockChickens, flockAverageHistory } from './data';
 import { YOLOProcessingModal } from './components/dashboard/YOLOProcessingModal';
 import HarvestPredictionCard from './components/dashboard/HarvestPredictionCard';
 import GrowthChart from './components/dashboard/GrowthChart';
+import { CalibrationModal } from './components/dashboard/CalibrationModal';
 
 export default function App() {
   // === STATE API BACKEND ===
@@ -46,6 +47,8 @@ export default function App() {
     if (!currentSessionId) return;
 
     const loadData = async () => {
+      const tStart = performance.now();
+
       try {
         // Ambil Data Tabel
         const listRes = await fetch(`${API_BASE}/session_objects?session_id=${currentSessionId}`);
@@ -68,6 +71,13 @@ export default function App() {
             setChickenDetails(detailData);
           }
         }
+
+        const tEnd = performance.now();
+        const latencyMs = tEnd - tStart;
+        
+        // Tampilkan di Console Browser untuk dicatat di Tesis
+        console.log(`⏱️ [Frontend] API Fetch & Render Latency: ${latencyMs.toFixed(2)} ms`);
+        
       } catch (e) {
         console.error('Error fetching data:', e);
       }
@@ -177,6 +187,7 @@ export default function App() {
             }}
             duration={2000}
           />
+          <CalibrationModal />
           <Dialog>
             <DialogTrigger asChild>
               <Button size="icon" className="bg-transparent text-white hover:bg-zinc-800/60">
