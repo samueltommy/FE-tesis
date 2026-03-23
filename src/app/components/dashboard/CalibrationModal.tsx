@@ -38,7 +38,14 @@ export const CalibrationModal = () => {
     setLoading(true);
     setError(false);
     try {
-      const res = await fetch(`${API_BASE}/api/calibration/save`, { method: 'POST' });
+      // PERBAIKAN: Tambahkan headers Content-Type dan body JSON
+      const res = await fetch(`${API_BASE}/api/calibration/save`, { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: 'Web Auto-Calib' })
+      });
       const data = await res.json();
       
       setMessage(data.message);
