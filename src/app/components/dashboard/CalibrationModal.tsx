@@ -167,7 +167,7 @@ export const CalibrationModal = () => {
                     <div className="text-xs text-zinc-300 leading-relaxed flex flex-col gap-1.5">
                       <p><strong className="text-red-400">PENTING:</strong> Kertas tidak boleh disebar sembarangan!</p>
                       <ul className="list-disc pl-4 space-y-1 text-zinc-400">
-                        <li>Gunakan meteran, letakkan 4 ArUco membentuk persegi tepat berukuran <b>200 cm x 200 cm</b> di lantai kandang.</li>
+                        <li>Gunakan meteran, letakkan 4 ArUco membentuk persegi tepat berukuran <b>100 cm x 100 cm</b> di lantai kandang.</li>
                         <li>Pengukuran ditarik tepat dari <b>titik tengah</b> (silang) antar kertas.</li>
                         <li>Pastikan kotak penanda hijau muncul di layar kiri tanpa terganggu pantulan silau lampu.</li>
                       </ul>
