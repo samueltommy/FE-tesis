@@ -18,8 +18,8 @@ export default function CloudDashboard() {
   const [chartData, setChartData] = useState<any[]>([]);
 
   // Ganti dengan Kredensial Supabase Anda
-  const SUPABASE_URL = "https://XYZ.supabase.co/rest/v1";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5c..."; 
+  const SUPABASE_URL = "https://ndnejpwvukyhklkbejbd.supabase.co/rest/v1";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kbmVqcHd2dWt5aGtsa2JlamJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwOTQyODUsImV4cCI6MjA4OTY3MDI4NX0.UMf7OhSX0pbbfQ3fNAe1fPvsHKJZEIiC7b9xv31aZj4"; 
 
   useEffect(() => {
     // Simulasi Fetching Data dari Supabase Cloud
