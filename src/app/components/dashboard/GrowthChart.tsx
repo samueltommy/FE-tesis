@@ -2,10 +2,8 @@
 
 import { useMemo } from "react"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts"
-// PERBAIKAN 1: Menggunakan Relative Path agar TypeScript pasti menemukannya
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 
-// Standar Pertumbuhan Ciomas (0 - 35 Hari)
 const CIOMAS_STANDARD = [
   { day: 0, target_weight: 0.042 }, { day: 1, target_weight: 0.056 }, { day: 2, target_weight: 0.073 },
   { day: 3, target_weight: 0.094 }, { day: 4, target_weight: 0.118 }, { day: 5, target_weight: 0.145 },
@@ -37,14 +35,15 @@ export function GrowthChart({ data }: GrowthChartProps) {
 
     const aggregatedByAge: Record<number, { totalWeight: number; count: number }> = {}
     
-    // PERBAIKAN: Urutkan data berdasarkan umur (dari hari 0 ke 35) agar Recharts tidak bingung
-    const sortedData = [...data].sort((a, b) => (a.age_days || 0) - (b.age_days || 0));
+    // Gunakan corrected_age_days untuk sorting
+    const sortedData = [...data].sort((a, b) => (a.corrected_age_days || a.age_days || 0) - (b.corrected_age_days || b.age_days || 0));
 
     sortedData.forEach((session) => {
-      const age = session.age_days
-      const weight = session.average_weight_kg || session.ai_average_weight_kg
+      // PERBAIKAN: Selalu gunakan umur yang sudah dikalibrasi oleh CloudDashboard
+      const age = session.corrected_age_days !== undefined ? session.corrected_age_days : session.age_days;
+      const weight = session.ai_average_weight_kg || session.average_weight_kg;
       
-      if (age !== undefined && weight !== undefined) {
+      if (age !== undefined && weight !== undefined && weight > 0) {
         if (!aggregatedByAge[age]) {
           aggregatedByAge[age] = { totalWeight: 0, count: 0 }
         }
@@ -70,47 +69,46 @@ export function GrowthChart({ data }: GrowthChartProps) {
   }, [data])
 
   return (
-    <Card className="col-span-1 lg:col-span-2 shadow-sm">
-      <CardHeader>
-        <CardTitle>Kurva Pertumbuhan vs Standar Ciomas</CardTitle>
-        <CardDescription>
-          Membandingkan berat aktual deteksi AI dengan target ideal 35 hari
+    <Card className="bg-black border-zinc-800 lg:col-span-2 shadow-sm flex flex-col h-[450px]">
+      <CardHeader className="shrink-0">
+        <CardTitle className="text-zinc-200">Kurva Pertumbuhan Rata-rata Harian vs Ciomas</CardTitle>
+        <CardDescription className="text-zinc-500">
+          Membandingkan rata-rata berat harian AI dengan target ideal 35 hari
         </CardDescription>
       </CardHeader>
-      <CardContent className="w-full h-[380px] pb-4">
+      <CardContent className="w-full flex-1 min-h-0 pb-4">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" />
             <XAxis 
               dataKey="dayLabel" 
               tickLine={false}
               axisLine={false}
               tickMargin={10}
               minTickGap={25}
-              style={{ fontSize: '12px', fill: '#64748b' }}
+              style={{ fontSize: '11px', fill: '#71717a' }}
             />
             <YAxis 
               tickLine={false}
               axisLine={false}
               tickFormatter={(value) => `${value} kg`}
-              style={{ fontSize: '12px', fill: '#64748b' }}
+              style={{ fontSize: '11px', fill: '#71717a' }}
             />
             <Tooltip 
-              // PERBAIKAN 2: Menggunakan tipe 'any' untuk menghindari error strictness dari Recharts
               formatter={(value: any, name: any) => [
                 `${value ? value : 0} kg`, 
-                name === "target" ? "Target Ciomas" : "Berat Aktual AI"
+                name === "target" ? "Target Ciomas" : "Berat Rata-rata Harian AI"
               ]}
-              labelStyle={{ color: '#0f172a', fontWeight: 'bold', marginBottom: '4px' }}
-              contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+              labelStyle={{ color: '#f1f5f9', fontWeight: 'bold', marginBottom: '4px' }}
+              contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', borderRadius: '8px', boxShadow: '0 4px 10px rgb(0 0 0 / 0.5)' }}
             />
-            <Legend verticalAlign="top" height={36} wrapperStyle={{ paddingBottom: '10px' }}/>
+            <Legend verticalAlign="top" height={30} wrapperStyle={{ paddingBottom: '10px', color: '#71717a', fontSize: '12px' }}/>
             
             <Line
               name="target"
               type="monotone"
               dataKey="target"
-              stroke="#94a3b8"
+              stroke="#a1a1aa" 
               strokeWidth={2}
               strokeDasharray="5 5"
               dot={false}
@@ -121,10 +119,10 @@ export function GrowthChart({ data }: GrowthChartProps) {
               name="actual"
               type="monotone"
               dataKey="actual"
-              stroke="#2563eb"
+              stroke="#22c55e"
               strokeWidth={3}
-              dot={{ r: 4, fill: "#2563eb", strokeWidth: 2 }}
-              activeDot={{ r: 6, stroke: "#bfdbfe", strokeWidth: 4 }}
+              dot={{ r: 5, fill: "#22c55e", strokeWidth: 2 }} 
+              activeDot={{ r: 7, stroke: "#bef264", strokeWidth: 3 }}
               connectNulls={true} 
             />
           </LineChart>
