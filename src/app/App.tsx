@@ -23,8 +23,12 @@ export default function App() {
 
   // Standar Ciomas untuk pembanding grafik
   const ciomasStandard = {
+    1: 0.056, 2: 0.073, 3: 0.094, 4: 0.118, 5: 0.145, 6: 0.176, 7: 0.210,
+    8: 0.247, 9: 0.288, 10: 0.332, 11: 0.379, 12: 0.429, 13: 0.483, 14: 0.540,
     15: 0.600, 16: 0.663, 17: 0.729, 18: 0.798, 19: 0.870, 20: 0.945,
-    21: 1.024, 22: 1.105, 23: 1.189, 24: 1.276, 25: 1.365
+    21: 1.024, 22: 1.105, 23: 1.189, 24: 1.276, 25: 1.365, 26: 1.457,
+    27: 1.552, 28: 1.649, 29: 1.747, 30: 1.846, 31: 1.945, 32: 2.045,
+    33: 2.146, 34: 2.247, 35: 2.348
   };
 
   useEffect(() => {
@@ -68,14 +72,15 @@ export default function App() {
             }
           });
 
-          const chartArr = Object.keys(mapByAge).map(day => {
+          const chartArr = Object.keys(ciomasStandard).map(day => {
             const d = parseInt(day);
             return {
               day: d,
-              actual: mapByAge[d],
-              target: ciomasStandard[d as keyof typeof ciomasStandard] || (mapByAge[d] * 1.1) // fallback target
+              actual: mapByAge[d] !== undefined ? mapByAge[d] : null, // Gunakan null jika data belum ada
+              target: ciomasStandard[d as keyof typeof ciomasStandard]
             };
           });
+          
           setChartData(chartArr);
 
         } else {
@@ -110,15 +115,16 @@ export default function App() {
       { id: '20260320_0800', created_at: '2026-03-20T08:00:00', age_days: 19, average_weight_kg: 0.88, chicken_count: 100 },
     ];
 
-    const mockChart = [
-      { day: 15, actual: 0.61, target: 0.60 },
-      { day: 16, actual: 0.65, target: 0.66 },
-      { day: 17, actual: 0.74, target: 0.73 },
-      { day: 18, actual: 0.81, target: 0.80 },
-      { day: 19, actual: 0.88, target: 0.87 },
-      { day: 20, actual: 0.96, target: 0.94 },
-      { day: 21, actual: 1.05, target: 1.02 },
-    ];
+    // Buat data grafik berdasarkan standar Ciomas
+    const mockChart = Object.keys(ciomasStandard).map(day => {
+      const d = parseInt(day);
+      const sessionData = mockSessions.find(s => s.age_days === d);
+      return {
+        day: d,
+        actual: sessionData ? sessionData.average_weight_kg : null,
+        target: ciomasStandard[d as keyof typeof ciomasStandard]
+      };
+    });
 
     setSessions(mockSessions);
     setChartData(mockChart);
@@ -230,7 +236,16 @@ export default function App() {
                   />
                   <ReferenceLine y={2.0} label={{ position: 'top', value: 'Target Panen (2kg)', fill: '#a1a1aa', fontSize: 10 }} stroke="#a1a1aa" strokeDasharray="3 3" />
                   
-                  <Line type="monotone" dataKey="actual" name="Berat Aktual AI (kg)" stroke="#22c55e" strokeWidth={3} dot={{ r: 4, fill: '#22c55e' }} activeDot={{ r: 6 }} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="actual" 
+                    name="Berat Aktual AI (kg)" 
+                    stroke="#22c55e" 
+                    strokeWidth={3} 
+                    dot={{ r: 4, fill: '#22c55e' }} 
+                    activeDot={{ r: 6 }} 
+                    connectNulls={true} // <-- Tambahkan ini
+                  />
                   <Line type="monotone" dataKey="target" name="Standar Ciomas (kg)" stroke="#3b82f6" strokeWidth={2} strokeDasharray="5 5" dot={false} />
                 </LineChart>
               </ResponsiveContainer>

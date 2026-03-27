@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Activity, TrendingUp, Calendar, AlertCircle, Server, CheckCircle2, Cloud } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-
-// Asumsi Anda menggunakan Recharts untuk grafik di React
+import { GrowthChart } from './GrowthChart';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 export default function CloudDashboard() {
@@ -35,10 +34,30 @@ export default function CloudDashboard() {
 
         // Data Simulasi (Hapus jika sudah konek Supabase)
         const mockSessions = [
-          { id: '20260322_0800', created_at: '2026-03-22T08:00:00', age_days: 21, average_weight_kg: 1.05, chicken_count: 98 },
-          { id: '20260321_0800', created_at: '2026-03-21T08:00:00', age_days: 20, average_weight_kg: 0.96, chicken_count: 100 },
-          { id: '20260320_0800', created_at: '2026-03-20T08:00:00', age_days: 19, average_weight_kg: 0.88, chicken_count: 100 },
+          { 
+            id: '1', 
+            created_at: '2026-03-25T08:00:00', 
+            age_days: 14, 
+            average_weight_kg: 0.450, 
+            chicken_count: 85 
+          },
+          { 
+            id: '2', 
+            created_at: '2026-03-26T08:00:00', 
+            age_days: 15, 
+            average_weight_kg: 0.569, 
+            chicken_count: 91 
+          },
+          { 
+            id: '3', 
+            created_at: '2026-03-27T08:00:00', 
+            age_days: 16, 
+            average_weight_kg: 0.680, 
+            chicken_count: 88 
+          },
         ];
+        
+        setSessions(mockSessions);
 
         const mockChart = [
           { day: 15, actual: 0.61, target: 0.60 },
@@ -152,28 +171,7 @@ export default function CloudDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* CHART AREA */}
-          <Card className="bg-zinc-900 border-zinc-800 lg:col-span-2 flex flex-col h-[450px]">
-            <CardHeader>
-              <CardTitle className="text-lg text-zinc-200">Kurva Pertumbuhan AI vs Standar Ciomas</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 min-h-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                  <XAxis dataKey="day" stroke="#52525b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `Hari ${v}`} />
-                  <YAxis stroke="#52525b" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', borderRadius: '8px' }}
-                    itemStyle={{ color: '#e4e4e7' }}
-                  />
-                  <ReferenceLine y={2.0} label={{ position: 'top', value: 'Target Panen (2kg)', fill: '#a1a1aa', fontSize: 10 }} stroke="#a1a1aa" strokeDasharray="3 3" />
-                  
-                  <Line type="monotone" dataKey="actual" name="Berat Aktual AI (kg)" stroke="#22c55e" strokeWidth={3} dot={{ r: 4, fill: '#22c55e' }} activeDot={{ r: 6 }} />
-                  <Line type="monotone" dataKey="target" name="Standar Ciomas (kg)" stroke="#3b82f6" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+          <GrowthChart data={sessions} />
 
           {/* TABLE LOGS AREA */}
           <Card className="bg-zinc-900 border-zinc-800 flex flex-col h-[450px]">
