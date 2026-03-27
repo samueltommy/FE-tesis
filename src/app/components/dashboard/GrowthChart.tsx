@@ -35,11 +35,9 @@ export function GrowthChart({ data }: GrowthChartProps) {
 
     const aggregatedByAge: Record<number, { totalWeight: number; count: number }> = {}
     
-    // Gunakan corrected_age_days untuk sorting
     const sortedData = [...data].sort((a, b) => (a.corrected_age_days || a.age_days || 0) - (b.corrected_age_days || b.age_days || 0));
 
     sortedData.forEach((session) => {
-      // PERBAIKAN: Selalu gunakan umur yang sudah dikalibrasi oleh CloudDashboard
       const age = session.corrected_age_days !== undefined ? session.corrected_age_days : session.age_days;
       const weight = session.ai_average_weight_kg || session.average_weight_kg;
       
@@ -69,7 +67,8 @@ export function GrowthChart({ data }: GrowthChartProps) {
   }, [data])
 
   return (
-    <Card className="bg-black border-zinc-800 lg:col-span-2 shadow-sm flex flex-col h-[450px]">
+    // PERBAIKAN: Mengganti bg-black menjadi bg-zinc-900 agar sama persis dengan card lain
+    <Card className="bg-zinc-900 border-zinc-800 lg:col-span-2 shadow-sm flex flex-col h-[450px]">
       <CardHeader className="shrink-0">
         <CardTitle className="text-zinc-200">Kurva Pertumbuhan Rata-rata Harian vs Ciomas</CardTitle>
         <CardDescription className="text-zinc-500">
